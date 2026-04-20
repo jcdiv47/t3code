@@ -138,4 +138,22 @@ describe("ChatMarkdown", () => {
       await screen.unmount();
     }
   });
+
+  it("renders inline and block math formulas", async () => {
+    const screen = await render(
+      <ChatMarkdown
+        text={`Inline math $E = mc^2$ and block math:\n\n$$\n\\int_0^1 x^2 dx = \\frac{1}{3}\n$$`}
+        cwd="/repo/project"
+      />,
+    );
+
+    try {
+      await vi.waitFor(() => {
+        expect(document.querySelector(".katex")).not.toBeNull();
+        expect(document.querySelector(".katex-display")).not.toBeNull();
+      });
+    } finally {
+      await screen.unmount();
+    }
+  });
 });
