@@ -10,9 +10,7 @@ const ReleaseChannel = Schema.Literals(["stable", "nightly"]);
 type ReleaseChannel = typeof ReleaseChannel.Type;
 
 interface StableVersion {
-  readonly major: number;
-  readonly minor: number;
-  readonly patch: number;
+  readonly core: ReadonlyArray<number>;
   readonly prerelease: ReadonlyArray<string>;
 }
 
@@ -44,9 +42,13 @@ const comparePrereleaseIdentifiers = (left: string, right: string): number => {
 };
 
 const compareStableVersions = (left: StableVersion, right: StableVersion): number => {
-  if (left.major !== right.major) return left.major - right.major;
-  if (left.minor !== right.minor) return left.minor - right.minor;
-  if (left.patch !== right.patch) return left.patch - right.patch;
+  const maxCoreLength = Math.max(left.core.length, right.core.length);
+  for (let index = 0; index < maxCoreLength; index += 1) {
+    const leftPart = left.core[index] ?? 0;
+    const rightPart = right.core[index] ?? 0;
+    if (leftPart !== rightPart) return leftPart - rightPart;
+  }
+  if (left.core.length !== right.core.length) return left.core.length - right.core.length;
 
   const leftHasPrerelease = left.prerelease.length > 0;
   const rightHasPrerelease = right.prerelease.length > 0;
@@ -69,16 +71,14 @@ const compareStableVersions = (left: StableVersion, right: StableVersion): numbe
 };
 
 const parseStableTag = (tag: string): StableVersion | undefined => {
-  const match = /^v(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(tag);
+  const match = /^v(\d+(?:\.\d+){2,})(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(tag);
   if (!match) return undefined;
 
-  const [, major, minor, patch, prerelease] = match;
-  if (!major || !minor || !patch) return undefined;
+  const [, core, prerelease] = match;
+  if (!core) return undefined;
 
   return {
-    major: Number(major),
-    minor: Number(minor),
-    patch: Number(patch),
+    core: core.split(".").map(Number),
     prerelease: prerelease ? prerelease.split(".") : [],
   };
 };
@@ -107,7 +107,7 @@ const parseNightlyTag = (tag: string): NightlyVersion | undefined => {
   };
 };
 
-const resolvePreviousReleaseTag = (
+export const resolvePreviousReleaseTag = (
   channel: ReleaseChannel,
   currentTag: string,
   tags: ReadonlyArray<string>,
@@ -196,8 +196,10 @@ const command = Command.make(
     ),
 ).pipe(Command.withDescription("Resolve the previous release tag for a stable or nightly series."));
 
-Command.run(command, { version: "0.0.0" }).pipe(
-  Effect.scoped,
-  Effect.provide(NodeServices.layer),
-  NodeRuntime.runMain,
-);
+if (import.meta.main) {
+  Command.run(command, { version: "0.0.0" }).pipe(
+    Effect.scoped,
+    Effect.provide(NodeServices.layer),
+    NodeRuntime.runMain,
+  );
+}
