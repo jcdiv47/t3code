@@ -71,7 +71,7 @@ const compareStableVersions = (left: StableVersion, right: StableVersion): numbe
 };
 
 const parseStableTag = (tag: string): StableVersion | undefined => {
-  const match = /^v(\d+(?:\.\d+){2,})(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(tag);
+  const match = /^v(\d+(?:\.\d+){2})(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(tag);
   if (!match) return undefined;
 
   const [, core, prerelease] = match;

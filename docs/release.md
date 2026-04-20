@@ -13,8 +13,10 @@ This document covers the unified release workflow for stable and nightly desktop
 - Builds one desktop artifact for both channels:
   - macOS `arm64` DMG
 - Publishes one GitHub Release with the produced macOS files.
-  - Stable tags with a suffix after `X.Y.Z` (for example `1.2.3-alpha.1`) are published as GitHub prereleases.
-  - Only plain stable `X.Y.Z` releases are marked as the repository's latest release.
+  - Stable release tags must use three-part semver core versions.
+  - Fork patch releases should use the form `X.Y.Z-t3.N` (for example `0.0.21-t3.1`).
+  - Generic semver prerelease tags (for example `1.2.3-alpha.1`) are published as GitHub prereleases.
+  - Plain stable `X.Y.Z` releases and fork patch `X.Y.Z-t3.N` releases are marked as the repository's latest release.
   - Nightly runs are always GitHub prereleases and never marked latest.
   - Automatically generated release notes are pinned to the previous tag in the same channel, so stable compares to the previous stable tag and nightly compares to the previous nightly tag.
 - Includes Electron auto-update metadata (for example `latest*.yml`, `nightly*.yml`, and `*.blockmap`) in release assets.
@@ -56,6 +58,15 @@ This document covers the unified release workflow for stable and nightly desktop
 - macOS metadata note:
   - `electron-updater` reads `latest-mac.yml` on stable and `nightly-mac.yml` on nightly.
   - The release workflow publishes the arm64 mac manifest directly because it no longer builds multiple mac architectures.
+
+## Stable versioning
+
+- Desktop packaging must use semver-safe app versions because electron-builder normalizes the package `version`.
+- Do not use four-part numeric stable versions like `0.0.20.3`; electron-builder rewrites them into malformed filenames and update metadata.
+- When shipping fork-only patches on top of an upstream base release, use `X.Y.Z-t3.N`.
+  - Example: if upstream has `0.0.20` and this repo needs two fork-only follow-up releases before rebasing, tag them `v0.0.21-t3.1` and `v0.0.21-t3.2`.
+  - After rebasing to upstream `0.0.21`, start the next fork patch line at `v0.0.22-t3.1`.
+- These `-t3.N` tags still publish to the desktop `latest` update channel and are treated as normal stable releases by this workflow.
 
 ## 0) Dry-run release without signing
 
@@ -103,7 +114,7 @@ Notes:
 
 1. Ensure `main` is green in CI.
 2. Bump app version as needed.
-3. Create release tag: `vX.Y.Z`.
+3. Create release tag: `vX.Y.Z` or `vX.Y.Z-t3.N`.
 4. Push tag.
 5. Verify workflow steps:
    - preflight passes
